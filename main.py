@@ -1,17 +1,31 @@
+#                        
+#   _   _    _____   ______    _____    _____    _____   ______     ___     _____    _   __   _____   ______ 
+#  | | | |  |_   _|  |  _  \  |  ___|  |  _  |  |_   _|  | ___ \   / _ \   /  __ \  | | / /  |  ___|  | ___ \
+#  | | | |    | |    | | | |  | |__    | | | |    | |    | |_/ /  / /_\ \  | /  \/  | |/ /   | |__    | |_/ /
+#  | | | |    | |    | | | |  |  __|   | | | |    | |    |    /   |  _  |  | |      |    \   |  __|   |    / 
+#  | |/ /    _| |_   | |/ /   | |___   | |_| |    | |    | |\ \   | | | |  | \__/\  | |\  \  | |___   | |\ \ 
+#  |___/    \_____/  |___/    \____/   |_____|    \_/    |_| \_\  \_| |_/   \____/  \_| \_/  \____/   |_| \_\
+#  
+# -------------------------------------------------------------
+# By Karim Hantaou
+# GitHub: https://github.com/karimhantaou
+# -------------------------------------------------------------
+
+
 import cv2
 import mediapipe as mp
 from ultralytics import YOLO
 import os
 
 
-# Load your 1080p video
-input_video ="input/vid.mov" #paste the path of your video here
-output_video = "output/vid.mov" #will be saved in the same directory as the 
+#Load your video
+input_video ="input/vid.mp4" #paste the path of your video here
+output_video = "output/vid.mp4" #will be saved in the same directory as the 
 USE_MEDIAPIPE = True
 USE_YOLO = True
 
 
-# Initialize MediaPipe Pose with custom configuration
+#Initialize MediaPipe Pose with custom configuration
 mp_pose = mp.solutions.pose
 mp_draw = mp.solutions.drawing_utils
 pose = mp_pose.Pose(
@@ -23,18 +37,27 @@ pose = mp_pose.Pose(
 ) if USE_MEDIAPIPE else None
 
 
-# Load YOLOv8 Pose Model
-yolo_model = YOLO("model/yolov8x.pt") if USE_YOLO else None
+#Load YOLOv8 Pose Model, download it if not found
 
-# Open input video
+'''
+Available models :
+yolov8n
+yolov8s
+yolovv8m
+yolov8l
+yolov8x
+'''
+yolo_model = YOLO("model/yolov8n.pt") if USE_YOLO else None
+
+#Open input video
 cap = cv2.VideoCapture(input_video)
 
-# Get input video properties
+#Get input video properties
 frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
 
-# Setup output video writer
+#Setup output video writer
 out = cv2.VideoWriter(
     output_video,
     cv2.VideoWriter_fourcc(*'mp4v'),
@@ -45,13 +68,13 @@ out = cv2.VideoWriter(
 frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 print(f"📹 Processing {frame_count} frames from {input_video}...")
 
-# Frame loop
+#Frame loop
 while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
         break
 
-    # 1. YOLOv8 Detection
+    #1. YOLOv8 Detection
     if yolo_model:
         yolo_results = yolo_model(
             frame,
@@ -59,31 +82,29 @@ while cap.isOpened():
             verbose=False
             )[0]
         
-        ##frame = yolo_results[0].plot()
-        
         for box in yolo_results.boxes:
-            # Coordonnées
+            #Coordinates
             x1, y1, x2, y2 = map(int, box.xyxy[0])
 
-            # Confiance + classe
+            #Confiance + classe
             conf = float(box.conf[0])
             cls_id = int(box.cls[0])
             label = yolo_model.names[cls_id]
 
             #Style
-            color = (0, 255, 0)  # vert
+            color = (255, 255, 255) #Tracking color
             thickness = 3
             font = cv2.FONT_HERSHEY_SIMPLEX
 
-            # Dessin du rectangle
+            #Box
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
 
-            # Texte (label + score)
+            #Text
             text = f"{label} {conf:.2f}"
-            cv2.putText(frame, text, (x1, y1 - 5),
-                        font, 0.4, color, 1, cv2.LINE_AA)
+            cv2.putText(frame, text, (x1, y1 - 5), #Label's position (top left)
+                        font, 0.4, color, 1, cv2.LINE_AA) #Font, size, color, weight, idr
 
-    # 2. MediaPipe Pose Detection
+    #2. MediaPipe Pose Detection
     if pose:
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = pose.process(rgb_frame)
@@ -99,7 +120,7 @@ while cap.isOpened():
                 thickness=2
             )
             
-            # Draw the pose landmarks
+            #Draw the pose landmarks
             mp_draw.draw_landmarks(
                 frame,
                 results.pose_landmarks,
@@ -108,7 +129,7 @@ while cap.isOpened():
                 connection_spec
             )
             
-            # Add extra pose connections for more detail
+            #Add extra pose connections for more detail
             landmarks = results.pose_landmarks.landmark
             def draw_extra_connection(p1, p2):
                 x1 = int(landmarks[p1].x * frame_width)
@@ -117,7 +138,7 @@ while cap.isOpened():
                 y2 = int(landmarks[p2].y * frame_height)
                 cv2.line(frame, (x1, y1), (x2, y2), (255, 255, 255), 2)
 
-            # Additional connections
+            #Additional connections
             extra_connections = [
                 (0, 1),    # Nose to inner eye
                 (0, 4),    # Nose to outer eye
@@ -139,10 +160,10 @@ while cap.isOpened():
             for connection in extra_connections:
                 draw_extra_connection(*connection)
 
-    # Save the processed frame
+    #Save the processed frame
     out.write(frame)
 
-# Cleanup
+#Cleanup
 cap.release()
 out.release()
 print(f"✅ Saved processed video to: {output_video}")

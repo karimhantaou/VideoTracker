@@ -1,11 +1,15 @@
 # Ignore VS Code settings
 .vscode/
 
-# Ignore model files
+# Ignore model, input and output files
 model/*
+input/*
+output/*
 
 # Ignore Python cache
 __pycache__/
 
-# Keep empty model directory
+# Keep empty directories
 !model/.gitkeep
+!input/.gitkeep
+!output/.gitkeep
