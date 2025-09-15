@@ -2,7 +2,7 @@
 
 **VideoTracker** is a Python script that adds tracking effects to videos to detect people, cars, animals, and more. It's easy to use, and you can customize the tracking visuals by changing the parameters.  
 
-<img width="50%" alt="image" src="https://github.com/user-attachments/assets/bc3d46bd-47d5-4bf9-a617-a9126cb30b21" />
+<img width="20%" alt="image" src="https://github.com/user-attachments/assets/bc3d46bd-47d5-4bf9-a617-a9126cb30b21" />
 
 ## Features
 
